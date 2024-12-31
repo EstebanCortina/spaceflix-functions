@@ -1,6 +1,7 @@
 const {onRequest} = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const cors = require("cors");
+const {MercadoPagoConfig} = require("mercadopago");
 
 admin.initializeApp();
 
@@ -73,5 +74,32 @@ exports.createOrder = onRequest(async (req, res) => {
   } catch (error) {
     console.error("Error creating order:", error);
     res.status(500).json({data: "Error creating order"});
+  }
+});
+
+exports.validatePayment = onRequest(async (req, res) => {
+  if (req.method !== "POST") {
+    return res.status(405).send("Only POST requests are allowed");
+  }
+  try {
+    const paymentId = req.body.data.id;
+    console.log("paymentId:", paymentId);
+    const {
+      MercadoPagoConfig,
+      Payment,
+    } = require("mercadopago");
+    const client = new MercadoPagoConfig({
+      // eslint-disable-next-line max-len
+      accessToken: process.env.MP_ACCESS_TOKEN,
+    });
+    const payment = await new Payment(client).get({id: paymentId});
+    console.log(payment);
+    if (payment.status === "approved") {
+      console.log("Shuld perform the purchase in app");
+    }
+    res.status(200).send();
+  } catch (error) {
+    console.log(error);
+    res.status(200).send();
   }
 });
