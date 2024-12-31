@@ -52,22 +52,23 @@ exports.createOrder = onRequest(async (req, res) => {
       accessToken: process.env.MP_ACCESS_TOKEN,
     });
 
-    console.log(client);
+    const {userData, items} = req.body;
 
-    console.log("error after creating client");
+    if (!userData || !items || !items.length) {
+      res.status(500).json({data: "Missing body params for create order"});
+    }
+
     const preference = await new Preference(client).create(
         {
           body: {
-            items: [{
-              id: "creditos",
-              unit_price: 1,
-              quantity: 1,
-              title: "Comprar créditos",
-            }],
+            items: items,
+          },
+          metadata: {
+            userData: userData,
+            orderData: items,
           },
         });
     const preferenceObj = await preference;
-    console.log(preferenceObj);
     res.status(201).json({data: preferenceObj.init_point});
   } catch (error) {
     console.error("Error creating order:", error);
